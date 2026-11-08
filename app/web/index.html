@@ -651,14 +651,14 @@
       } catch {}
     }
     // Gardyn Home layout: 10 rows x 3 columns, pods numbered row by row from the top left.
-    // Pods alternate sides row by row (row 1 on the left). Styling keys off the data-* set in renderPods.
+    // Pods alternate sides row by row (row 1 on the right). Styling keys off the data-* set in renderPods.
     const ZONE_ROWS = ["lll", "mmm", "hhm", "mhh", "hhm", "mhh", "hhm", "mhh", "mmm", "lll"];
     const ZONE_CODE = { h: "high", m: "medium", l: "low" };
     const COL_NAMES = ["left", "center", "right"];
     function podPosition(id) {
       const n = Number(id) - 1, row = Math.floor(n / 3), col = n % 3;
       const code = (ZONE_ROWS[row] || "")[col];
-      return code ? { zone: ZONE_CODE[code], side: row % 2 ? "right" : "left", col: COL_NAMES[col], row: row + 1 } : null;
+      return code ? { zone: ZONE_CODE[code], side: row % 2 ? "left" : "right", col: COL_NAMES[col], row: row + 1 } : null;
     }
     function catalogOptionsHTML(zone) {
       const cats = {};
