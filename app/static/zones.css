@@ -1,0 +1,18 @@
+/* Zone theme for the Plants card. Styles each pod from the data-zone and data-side
+   attributes the page sets. Remove the <link> to this file to turn the look off.
+   Colors use light-dark(), so they follow the page's light/dark theme. */
+.pod[data-zone="high"]   { --zc: light-dark(#2f7a57, #dff5e8); --zbg: #54bd8a; }
+.pod[data-zone="medium"] { --zc: light-dark(#4fae7c, #54bd8a); --zbg: light-dark(#a9d9bd, #2a4a38); }
+.pod[data-zone="low"]    { --zc: light-dark(#8fb39e, #2b7a54); --zbg: light-dark(#dfeae3, #0e1713); }
+.pod[data-zone] { background: var(--zbg); }
+.pod[data-side="left"]  { border-left: 4px solid var(--zc); }
+.pod[data-side="right"] { border-right: 4px solid var(--zc); }
+.pod[data-zone="high"] :is(.pn, .pview, .pview small, .pguide, .zone-badge) { color: #10281b; }
+.pod[data-zone="high"] .zone-badge::before   { content: "● "; }
+.pod[data-zone="medium"] .zone-badge::before { content: "◐ "; }
+.pod[data-zone="low"] .zone-badge::before    { content: "○ "; }
+/* Stagger: pods sit on alternating sides of the tower. Wide screens only; the grid has 2 columns on a phone. */
+@media (min-width: 641px) {
+  .pod[data-side="left"]  { margin-right: 14px; }
+  .pod[data-side="right"] { margin-left: 14px; }
+}
