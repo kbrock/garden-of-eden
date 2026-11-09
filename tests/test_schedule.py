@@ -144,5 +144,52 @@ class NormalizeScheduleTestCase(unittest.TestCase):
         self.assertEqual(norm["lights"]["days"]["sun"], [])
 
 
+class ScheduledLightLevelTestCase(unittest.TestCase):
+    """What should the light be doing right now? Used at boot, when cron events may have been missed."""
+
+    def sched(self, windows, day="mon", enabled=True, vacation=None):
+        days = {d: [] for d in sched.DAYS}
+        days[day] = windows
+        return {
+            "lights": {"enabled": enabled, "days": days},
+            "pump": {"enabled": False},
+            "vacation": vacation or {"enabled": False, "until": None},
+        }
+
+    def at(self, schedule, hour, minute=0, weekday=0):
+        # 2026-11-09 is a Monday; weekday offsets from it.
+        return sched.scheduled_light_level(
+            schedule, datetime.datetime(2026, 11, 9 + weekday, hour, minute)
+        )
+
+    def test_inside_window_is_its_brightness(self):
+        s = self.sched([{"onTime": "06:00", "offTime": "22:30", "brightness": 80}])
+        self.assertEqual(self.at(s, 12), 80)
+        self.assertEqual(self.at(s, 22, 29), 80)
+
+    def test_outside_window_is_off(self):
+        s = self.sched([{"onTime": "06:00", "offTime": "22:30", "brightness": 80}])
+        self.assertEqual(self.at(s, 5, 59), 0)
+        self.assertEqual(self.at(s, 22, 30), 0)
+        self.assertEqual(self.at(s, 2), 0)
+
+    def test_window_running_past_midnight_belongs_to_its_start_day(self):
+        s = self.sched([{"onTime": "23:00", "offTime": "07:00", "brightness": 70}])
+        self.assertEqual(self.at(s, 23, 30), 70)  # Monday night
+        self.assertEqual(self.at(s, 3, weekday=1), 70)  # Tuesday 03:00, still Monday's window
+        self.assertEqual(self.at(s, 8, weekday=1), 0)
+        self.assertEqual(self.at(s, 3), 0)  # Monday 03:00 follows Sunday, which has none
+
+    def test_disabled_lights_follow_nothing(self):
+        s = self.sched([{"onTime": "06:00", "offTime": "22:00", "brightness": 80}], enabled=False)
+        self.assertIsNone(self.at(s, 12))
+
+    def test_vacation_uses_the_keep_alive_profile(self):
+        s = self.sched([], vacation={"enabled": True, "until": None})
+        window = sched.VACATION_PROFILE["lights"][0]
+        hour = int(window["onTime"].split(":")[0])
+        self.assertEqual(self.at(s, hour, 1), int(window["brightness"]))
+
+
 if __name__ == "__main__":
     unittest.main()

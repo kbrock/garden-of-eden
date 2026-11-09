@@ -7,6 +7,7 @@ from gpiozero import PWMLED
 from gpiozero.pins.pigpio import PiGPIOFactory
 
 import config
+from app.lib import state as state_lib
 
 
 class GPIOController:
@@ -129,6 +130,16 @@ def ramp_to(light, target, minutes):
     light.set_brightness(target)
 
 
+def persist_light_state(light):
+    """Record the level the light ended at. Cron runs this file directly, so without
+    this the saved state goes stale and a restart restores an old brightness."""
+    level = int(round(light.get_brightness()))
+    if level > 0:
+        state_lib.save_state(light_on=True, brightness=level)
+    else:
+        state_lib.save_state(light_on=False)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Control an IoT light.")
     parser.add_argument("--on", action="store_true", help="Turn the light on.")
@@ -160,3 +171,5 @@ if __name__ == "__main__":
         light.set_brightness(args.brightness)
     else:
         logging.info("No action specified. Use --on, --off, or --brightness.")
+
+    persist_light_state(light)

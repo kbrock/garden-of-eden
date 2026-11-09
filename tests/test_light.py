@@ -1,11 +1,14 @@
+import json
 import os
 import sys
+import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 # Add the root directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from app.sensors.light.light import Light
+import config
+from app.sensors.light.light import Light, persist_light_state
 
 
 class TestLight(unittest.TestCase):
@@ -53,6 +56,35 @@ class TestLight(unittest.TestCase):
     def test_close(self):
         self.light.close()
         self.mock_led.close.assert_called_once()
+
+
+
+class TestPersistLightState(unittest.TestCase):
+    """The cron `light` command must record where it left the light, so a restart restores it."""
+
+    def setUp(self):
+        fd, self.path = tempfile.mkstemp(suffix=".json")
+        os.close(fd)
+        os.unlink(self.path)
+        patcher = patch.object(config, "STATE_FILE", self.path)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(lambda: os.path.exists(self.path) and os.unlink(self.path))
+
+    def saved(self):
+        with open(self.path) as fh:
+            return json.load(fh)
+
+    def test_on_saves_level(self):
+        persist_light_state(MagicMock(get_brightness=lambda: 100.0))
+        self.assertEqual(self.saved()["light_on"], True)
+        self.assertEqual(self.saved()["brightness"], 100)
+
+    def test_off_saves_off_and_keeps_last_brightness(self):
+        persist_light_state(MagicMock(get_brightness=lambda: 80.0))
+        persist_light_state(MagicMock(get_brightness=lambda: 0.0))
+        self.assertEqual(self.saved()["light_on"], False)
+        self.assertEqual(self.saved()["brightness"], 80)
 
 
 if __name__ == "__main__":
