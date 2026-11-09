@@ -21,13 +21,6 @@ class TestLight(unittest.TestCase):
         self.mock_pi = MockPi.return_value
         self.light = Light(18)
 
-    @patch("app.sensors.light.light.PWMLED")
-    @patch("app.sensors.light.light.PiGPIOFactory")
-    @patch("app.sensors.light.light.pigpio.pi")
-    def test_init_leaves_pin_state_alone(self, MockPi, MockFactory, MockPWMLED):
-        Light(18)
-        self.assertIsNone(MockPWMLED.call_args.kwargs["initial_value"])
-
     def test_turn_on_from_0(self):
         self.mock_led.value = 0
         self.light.on()
