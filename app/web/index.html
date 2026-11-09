@@ -666,8 +666,8 @@
       plantCatalog.forEach(p => { (cats[p.category] = cats[p.category] || []).push(p); });
       let html = '<option value="">— empty —</option><option value="__other__">✏️ Other…</option>';
       if (best.length) {
-        html += `<optgroup label="Best for this pod (${zone} light)">`;
-        best.forEach(p => { html += `<option value="${p.name}">${p.name}</option>`; });
+        html += '<optgroup label="Best for this pod">';
+        best.forEach(p => { html += `<option value="${p.name}">${p.name} ${ZONE_GLYPH[p.light_need] || ""}</option>`; });
         html += "</optgroup>";
       }
       Object.keys(cats).sort().forEach(cat => {
