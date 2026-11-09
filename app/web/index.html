@@ -181,9 +181,8 @@
     .card:has(#edit-toggle:checked) .edit-btn { display:none; }
     .card:not(:has(#edit-toggle:checked)) .save-btn { display:none; }
     .pod .pview { font-size:.85rem; font-weight:600; margin:4px 0 2px; }
-    .pod .pview small { display:block; font-weight:400; color:var(--muted); font-size:.68rem; }
     .card:has(#edit-toggle:checked) .pod .pview { display:none; }
-    .card:not(:has(#edit-toggle:checked)) .pod :is(select, input, .pguide, .shapes) { display:none; }
+    .card:not(:has(#edit-toggle:checked)) .pod :is(select, input, .shapes, .pnum) { display:none; }
     .zone-badge { color:var(--muted); font-weight:700; margin-left:6px; }
     .pod .pn { font-size:.6rem; color:var(--faint); font-weight:700; letter-spacing:.05em; }
     .pod input { width:100%; margin:4px 0; font-size:.8rem; padding:4px 6px; border-radius:7px; }
@@ -667,8 +666,8 @@
       plantCatalog.forEach(p => { (cats[p.category] = cats[p.category] || []).push(p); });
       let html = '<option value="">— empty —</option><option value="__other__">✏️ Other…</option>';
       if (best.length) {
-        html += `<optgroup label="Best for this pod (${zone} light)">`;
-        best.forEach(p => { html += `<option value="${p.name}">${p.name}</option>`; });
+        html += '<optgroup label="Best for this pod">';
+        best.forEach(p => { html += `<option value="${p.name}">${p.name} ${ZONE_GLYPH[p.light_need] || ""}</option>`; });
         html += "</optgroup>";
       }
       Object.keys(cats).sort().forEach(cat => {
@@ -680,7 +679,7 @@
     }
     const guideFor = name => {
       const p = plantCatalog.find(x => x.name === name);
-      return p ? `${p.guide} · ${p.light_need} light · ~${p.days_to_harvest}d · ${p.difficulty}` : "";
+      return p ? `${p.guide} · ~${p.days_to_harvest}d · ${p.difficulty}` : "";
     };
     function renderPods() {
       const box = $("pods"); box.innerHTML = "";
@@ -689,10 +688,11 @@
         const pos = podPosition(p.id);
         const cell = document.createElement("div"); cell.className = "pod";
         if (pos) Object.assign(cell.dataset, pos);
-        const pn = document.createElement("div"); pn.className = "pn"; pn.textContent = "POD " + p.id;
+        const pn = document.createElement("div"); pn.className = "pn";
+        const pnum = document.createElement("span"); pnum.className = "pnum"; pnum.textContent = "POD " + p.id; pn.append(pnum);
         if (pos) {
           const badge = document.createElement("span"); badge.className = "zone-badge";
-          badge.textContent = `row ${pos.row} ${pos.col}`; pn.append(badge);
+          badge.textContent = `row ${pos.row}`; pn.append(badge);
         }
         const isCustom = p.name && !plantCatalog.some(x => x.name === p.name);
         const sel = document.createElement("select"); sel.innerHTML = catalogOptionsHTML(pos && pos.zone);
@@ -702,9 +702,8 @@
         const guide = document.createElement("div"); guide.className = "pguide muted"; guide.textContent = guideFor(p.name);
         const view = document.createElement("div"); view.className = "pview";
         const setView = () => {
-          const n = pods[i].name, c = plantCatalog.find(x => x.name === n);
-          view.textContent = n || "empty"; view.title = guideFor(n);
-          if (c) { const s = document.createElement("small"); s.textContent = `~${c.days_to_harvest}d · ${c.difficulty}`; view.append(s); }
+          const n = pods[i].name;
+          view.textContent = n || "empty";
         };
         setView();
         sel.onchange = () => {
