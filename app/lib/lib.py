@@ -4,7 +4,15 @@ from functools import wraps
 from flask import jsonify
 from werkzeug.exceptions import HTTPException
 
+import config
+
 logger = logging.getLogger(__name__)
+
+
+def convert_temp(celsius):
+    """Celsius reading in the configured TEMP_UNIT, rounded to 2 places."""
+    value = celsius * 9 / 5 + 32 if config.TEMP_UNIT == "F" else celsius
+    return round(value, 2)
 
 
 def parse_level(data, key="value", default=None):

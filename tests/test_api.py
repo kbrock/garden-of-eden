@@ -156,7 +156,14 @@ class PCBTempBlueprintTestCase(BaseTestCase):
         self.assertEqual(response.status_code, 200)
 
         # Asserting that the response JSON contains the mocked temperature value
-        self.assertEqual(response.get_json(), {"pcb-temp": 55.7})
+        self.assertEqual(response.get_json(), {"pcb-temp": 55.7, "unit": "C"})
+
+    @patch("config.TEMP_UNIT", "F")
+    @patch("app.sensors.pcb_temp.routes.get_pcb_temperature")
+    def test_get_pcb_temperature_fahrenheit(self, mock_get_pcb_temperature):
+        mock_get_pcb_temperature.return_value = 50.0
+        response = self.client.get(f"{self.BASE_ROUTE}")
+        self.assertEqual(response.get_json(), {"pcb-temp": 122.0, "unit": "F"})
 
 
 class TemperatureBlueprintTestCase(BaseTestCase):
@@ -175,7 +182,14 @@ class TemperatureBlueprintTestCase(BaseTestCase):
         self.assertEqual(response.status_code, 200)
 
         # Asserting that the response JSON contains the mocked temperature value
-        self.assertEqual(response.get_json(), {"temperature": 45.6})
+        self.assertEqual(response.get_json(), {"temperature": 45.6, "unit": "C"})
+
+    @patch("config.TEMP_UNIT", "F")
+    @patch("app.sensors.temperature.routes.temperature_sensor.read")
+    def test_get_temperature_fahrenheit(self, mock_get_value):
+        mock_get_value.return_value = 25.0
+        response = self.client.get(f"{self.BASE_ROUTE}")
+        self.assertEqual(response.get_json(), {"temperature": 77.0, "unit": "F"})
 
 
 class HumidityBlueprintTestCase(BaseTestCase):

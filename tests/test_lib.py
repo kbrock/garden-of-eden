@@ -2,7 +2,9 @@ import unittest
 
 from flask import Flask, jsonify
 
-from app.lib.lib import check_sensor_guard, parse_level
+from unittest.mock import patch
+
+from app.lib.lib import check_sensor_guard, convert_temp, parse_level
 
 
 class CheckSensorGuardTestCase(unittest.TestCase):
@@ -67,3 +69,14 @@ class ParseLevelTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ConvertTempTestCase(unittest.TestCase):
+    @patch("config.TEMP_UNIT", "C")
+    def test_celsius_is_unchanged(self):
+        self.assertEqual(convert_temp(21.456), 21.46)
+
+    @patch("config.TEMP_UNIT", "F")
+    def test_fahrenheit(self):
+        self.assertEqual(convert_temp(0), 32.0)
+        self.assertEqual(convert_temp(100), 212.0)

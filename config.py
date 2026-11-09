@@ -92,6 +92,9 @@ DISTANCE_TRIGGER_PIN = _get_int("DISTANCE_TRIGGER_PIN", 26)
 BUTTON_PIN = _get_int("BUTTON_PIN", 13)
 OVER_TEMP_ALERT_PIN = _get_int("OVER_TEMP_ALERT_PIN", 25)
 
+# Unit for the temperature API: "C" (default) or "F". Sensors read Celsius; MQTT stays in Celsius.
+TEMP_UNIT = "F" if os.getenv("TEMP_UNIT", "C").strip().upper().startswith("F") else "C"
+
 # Default actuator levels applied when toggled on
 DEFAULT_BRIGHTNESS = _get_int("DEFAULT_BRIGHTNESS", 50)
 DEFAULT_PUMP_SPEED = _get_int("DEFAULT_PUMP_SPEED", 100)
