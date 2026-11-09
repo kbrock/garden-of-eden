@@ -259,9 +259,9 @@
     <div class="card">
       <h2>Sensors <button class="ghost" onclick="refresh()">Refresh</button></h2>
       <div class="tiles">
-        <div class="tile"><div class="top">Air Temp</div><div class="val"><span id="s-temp">—</span><small>°C</small></div></div>
+        <div class="tile"><div class="top">Air Temp</div><div class="val"><span id="s-temp">—</span><small id="u-temp">°C</small></div></div>
         <div class="tile"><div class="top">Humidity</div><div class="val"><span id="s-hum">—</span><small>%</small></div></div>
-        <div class="tile"><div class="top">PCB Temp</div><div class="val"><span id="s-pcb">—</span><small>°C</small></div></div>
+        <div class="tile"><div class="top">PCB Temp</div><div class="val"><span id="s-pcb">—</span><small id="u-pcb">°C</small></div></div>
         <div class="tile" id="s-water-card"><div class="top">Water <span class="statuschip" id="s-water-status"></span></div><div class="val"><span id="s-water-gal">—</span><small>gal</small></div><div class="muted" style="font-size:.68rem"><span id="s-water">—</span> cm</div><div class="bar"><i id="s-water-bar" style="width:0"></i></div></div>
       </div>
       <div class="tiles" style="margin-top:12px">
@@ -456,6 +456,7 @@
     async function setPump(on) { await post(on ? "/pump/on" : "/pump/off"); setActive("pump", on); }
     async function runPump() { const s = +$("run-secs").value; await post("/pump/run", { seconds: s }); setActive("pump", true); }
 
+    const UNIT_EL = { "s-temp": "u-temp", "s-pcb": "u-pcb" };
     async function refresh() {
       const sensors = {
         "/temperature": ["s-temp", "temperature"],
@@ -463,7 +464,10 @@
         "/pcb-temp": ["s-pcb", "pcb-temp"],
       };
       for (const [path, [id, key]] of Object.entries(sensors)) {
-        try { $(id).textContent = (await get(path))[key]; } catch { $(id).textContent = "n/a"; }
+        try {
+          const r = await get(path); $(id).textContent = r[key];
+          const u = $(UNIT_EL[id]); if (u) u.textContent = "°" + (r.unit || "C");  // no unit key means Celsius
+        } catch { $(id).textContent = "n/a"; }
       }
       try {
         const w = await get("/distance"); const cm = w.distance;
