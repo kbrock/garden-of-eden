@@ -37,9 +37,7 @@ class Light:
         # Note: for docker: PiGPIOFactory(host='pigpiod', port=8888)
         self.pin = pin
         self.pin_factory = pin_factory if pin_factory else PiGPIOFactory()
-        # initial_value=None leaves the pin as it is. The default (0) switches the
-        # light off every time a process builds a Light, e.g. an API restart.
-        self.led = PWMLED(self.pin, pin_factory=self.pin_factory, initial_value=None)
+        self.led = PWMLED(self.pin, pin_factory=self.pin_factory)
         self.gpio = GPIOController(pin, pin_factory)
         self.set_frequency(frequency)
 
