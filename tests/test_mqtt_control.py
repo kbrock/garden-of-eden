@@ -8,6 +8,7 @@ so nothing touches the host, and the state files live in a temp dir.
 import os
 import tempfile
 import unittest
+from unittest.mock import MagicMock, patch
 
 
 class FakeClient:
@@ -136,6 +137,44 @@ class MqttControlTestCase(unittest.TestCase):
         self.send("grow/stage/set", "harvest")
         self.send("grow/start/set", "PRESS")
         self.assertEqual(self.mqtt.grow_lib.load_state()["stage"], "germination")
+
+
+class RestoreLightTestCase(unittest.TestCase):
+    """After a restart the light follows the schedule, not a stale saved level."""
+
+    @classmethod
+    def setUpClass(cls):
+        import config
+        import mqtt
+        from app.lib import state as state_lib
+
+        cls.mqtt, cls.config, cls.state = mqtt, config, state_lib
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.config.STATE_FILE = os.path.join(self.tmp, "state.json")
+        self.state.save_state(light_on=True, brightness=100)
+        light = patch.object(self.mqtt, "light", MagicMock())
+        self.light = light.start()
+        self.addCleanup(light.stop)
+
+    def restore(self, scheduled):
+        with patch.object(self.mqtt.sched_lib, "scheduled_light_level", return_value=scheduled):
+            self.mqtt.restore_actuator_state(FakeClient())
+
+    def test_schedule_off_overrides_saved_on(self):
+        self.restore(0)
+        self.light.set_duty_cycle.assert_not_called()
+        self.assertFalse(self.state.load_state()["light_on"])
+
+    def test_schedule_level_overrides_saved_level(self):
+        self.restore(60)
+        self.light.set_duty_cycle.assert_called_with(60)
+        self.assertEqual(self.state.load_state()["brightness"], 60)
+
+    def test_no_schedule_keeps_saved_state(self):
+        self.restore(None)
+        self.light.set_duty_cycle.assert_called_with(100)
 
 
 if __name__ == "__main__":

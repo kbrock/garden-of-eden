@@ -1089,6 +1089,14 @@ def restore_actuator_state(client):
     """Restore light/pump to their last persisted state after a restart (#3)."""
     global light_state, pump_state, brightness, speed
     saved = state_lib.load_state()
+    # Cron only acts at window edges, so after a restart (or a power cut that skipped
+    # one) the schedule decides the light. The saved level applies only without one.
+    scheduled = sched_lib.scheduled_light_level(sched_lib.load_schedule())
+    if scheduled is not None:
+        saved["light_on"] = scheduled > 0
+        if scheduled:
+            saved["brightness"] = scheduled
+        state_lib.save_state(light_on=saved["light_on"], brightness=saved["brightness"])
     brightness = saved.get("brightness", brightness)
     speed = saved.get("speed", speed)
     try:

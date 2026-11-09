@@ -156,6 +156,37 @@ def is_vacation_active(schedule, today=None):
         return True
 
 
+def scheduled_light_level(schedule, now=None):
+    """Brightness (0 = off) the light schedule calls for at ``now``, or None when no
+    light schedule is enabled to follow. Cron only acts at window edges, so this
+    answers "what should it be right now?" after a restart or a power cut. A window
+    that runs past midnight belongs to the day it starts."""
+    schedule = normalize_schedule(schedule)
+    if is_vacation_active(schedule):
+        days = {d: VACATION_PROFILE["lights"] for d in DAYS}
+    elif schedule["lights"]["enabled"]:
+        days = schedule["lights"]["days"]
+    else:
+        return None
+    now = now or datetime.datetime.now()
+    minute = now.hour * 60 + now.minute
+    level = 0
+    for days_back in (0, 1):
+        for window in days[DAYS[(now.weekday() - days_back) % 7]]:
+            on_m, on_h = _hh_mm(window.get("onTime", "08:00"))
+            off_m, off_h = _hh_mm(window.get("offTime", "22:00"))
+            on, off = on_h * 60 + on_m, off_h * 60 + off_m
+            if on < off:
+                inside = days_back == 0 and on <= minute < off
+            elif on > off:
+                inside = (days_back == 0 and minute >= on) or (days_back == 1 and minute < off)
+            else:
+                inside = False
+            if inside:
+                level = max(level, int(window.get("brightness", 70)))
+    return level
+
+
 def _vacation_cron_lines():
     """Minimal keep-alive light/water for every day, plus a nightly refresh so
     vacation mode reverts to the normal schedule once its end date passes."""
